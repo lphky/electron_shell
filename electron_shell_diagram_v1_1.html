@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>電子圖互動練習 V1.1 Electron Shell Diagram</title>
+<style>
+:root{
+  --bg:#f5f8fc;
+  --panel:#ffffff;
+  --ink:#172033;
+  --muted:#64748b;
+  --line:#cbd5e1;
+  --primary:#2563eb;
+  --primary-soft:#dbeafe;
+  --good:#15803d;
+  --good-soft:#dcfce7;
+  --warn:#b45309;
+  --warn-soft:#ffedd5;
+  --bad:#b91c1c;
+  --bad-soft:#fee2e2;
+  --shadow:0 14px 38px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang HK","Noto Sans TC","Microsoft JhengHei",sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(37,99,235,.07), transparent 28rem),
+    var(--bg);
+}
+button,input{font:inherit}
+button{touch-action:manipulation}
+.app{
+  width:min(1180px,100%);
+  margin:0 auto;
+  padding:18px;
+}
+.header{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:flex-start;
+  margin-bottom:14px;
+}
+.brand h1{font-size:clamp(1.35rem,3vw,2rem);margin:0 0 4px}
+.brand p{margin:0;color:var(--muted)}
+.step-pill{
+  white-space:nowrap;
+  padding:9px 12px;
+  border-radius:999px;
+  background:#eaf1ff;
+  color:#1d4ed8;
+  font-weight:800;
+  font-size:.92rem;
+}
+.grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 320px;
+  gap:16px;
+  align-items:start;
+}
+.card{
+  background:var(--panel);
+  border:1px solid #e2e8f0;
+  border-radius:20px;
+  box-shadow:var(--shadow);
+}
+.question-card{padding:18px}
+.element-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.symbol-tile{
+  width:86px;height:86px;border-radius:18px;
+  background:linear-gradient(145deg,#e8f0ff,#ffffff);
+  border:2px solid #bfdbfe;
+  display:grid;place-items:center;
+  flex:0 0 auto;
+}
+.symbol-tile strong{font-size:2rem;color:#1d4ed8}
+.element-meta h2{margin:0;font-size:1.4rem}
+.element-meta p{margin:5px 0 0;color:var(--muted)}
+.stage{
+  margin-top:18px;
+  padding-top:18px;
+  border-top:1px solid #e2e8f0;
+}
+.stage h3{margin:0 0 8px;font-size:1.05rem}
+.stage p{margin:0 0 12px;color:var(--muted)}
+.answer-line{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.number-input{
+  width:140px;
+  min-height:48px;
+  border:1.5px solid #cbd5e1;
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:1rem;
+  background:#fff;
+}
+.number-input:focus{outline:3px solid rgba(37,99,235,.16);border-color:var(--primary)}
+.btn{
+  min-height:46px;
+  border:0;
+  border-radius:12px;
+  padding:10px 15px;
+  cursor:pointer;
+  font-weight:800;
+  background:#e2e8f0;
+  color:#1e293b;
+}
+.btn:hover{filter:brightness(.98)}
+.btn:focus-visible{outline:3px solid rgba(37,99,235,.25);outline-offset:2px}
+.btn.primary{background:var(--primary);color:white}
+.btn.good{background:var(--good);color:white}
+.btn.ghost{background:#f8fafc;border:1px solid #dbe3ee}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.shell-choice{
+  min-width:68px;
+  min-height:54px;
+  font-size:1.08rem;
+  border:2px solid #dbe3ee;
+  background:#fff;
+}
+.shell-choice.selected{
+  border-color:var(--primary);
+  background:var(--primary-soft);
+  color:#1d4ed8;
+}
+.feedback{
+  margin-top:12px;
+  border-radius:12px;
+  padding:11px 13px;
+  display:none;
+  font-weight:650;
+}
+.feedback.show{display:block}
+.feedback.info{background:#eff6ff;color:#1e40af}
+.feedback.good{background:var(--good-soft);color:#166534}
+.feedback.warn{background:var(--warn-soft);color:#9a3412}
+.feedback.bad{background:var(--bad-soft);color:#991b1b}
+.workspace-card{margin-top:16px;padding:16px}
+.workspace-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.workspace-head h3{margin:0}
+.workspace-head small{color:var(--muted)}
+.atom-wrap{
+  width:min(580px,100%);
+  margin:0 auto;
+  position:relative;
+}
+.atom-canvas{
+  position:relative;
+  width:100%;
+  aspect-ratio:1/1;
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(37,99,235,.045), transparent 48%),
+    linear-gradient(#fff,#fbfdff);
+  border:1px solid #e2e8f0;
+  overflow:hidden;
+  touch-action:none;
+}
+.nucleus{
+  position:absolute;
+  left:50%;top:50%;
+  width:84px;height:84px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  display:grid;place-items:center;
+  background:#1e293b;
+  color:white;
+  font-size:1.5rem;
+  font-weight:900;
+  z-index:4;
+  box-shadow:0 8px 18px rgba(15,23,42,.18);
+}
+.shell-ring{
+  position:absolute;
+  left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  border:2px solid #94a3b8;
+  border-radius:50%;
+  pointer-events:none;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+.shell-ring::after{
+  content:attr(data-label);
+  position:absolute;
+  left:50%;top:-13px;
+  transform:translateX(-50%);
+  font-size:.72rem;
+  color:#64748b;
+  background:#fff;
+  padding:1px 6px;
+  border-radius:999px;
+  white-space:nowrap;
+}
+.shell-ring.hot{
+  border-color:var(--primary);
+  box-shadow:0 0 0 6px rgba(37,99,235,.08);
+  background:rgba(37,99,235,.025);
+}
+.electron{
+  width:46px;height:46px;
+  border-radius:50%;
+  border:3px solid white;
+  background:#0f172a;
+  color:white;
+  display:grid;
+  place-items:center;
+  font-weight:900;
+  box-shadow:0 4px 10px rgba(15,23,42,.18);
+  cursor:grab;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
+.electron:active{cursor:grabbing}
+.electron.in-canvas{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  z-index:8;
+}
+.electron.selected{
+  outline:4px solid rgba(37,99,235,.28);
+  outline-offset:2px;
+}
+.drag-ghost{
+  position:fixed !important;
+  z-index:9999 !important;
+  pointer-events:none !important;
+  transform:translate(-50%,-50%) scale(1.08) !important;
+  opacity:.94;
+}
+.bank{
+  margin-top:14px;
+  border:2px dashed #cbd5e1;
+  border-radius:16px;
+  padding:12px;
+  min-height:82px;
+  background:#f8fafc;
+}
+.bank-title{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  color:#475569;
+  font-weight:800;
+  margin-bottom:8px;
+}
+.bank-items{display:flex;flex-wrap:wrap;gap:8px;min-height:46px}
+.empty-note{color:#94a3b8;font-size:.92rem;align-self:center}
+.move-panel{
+  margin-top:10px;
+  display:none;
+  background:#f8fafc;
+  border-radius:14px;
+  padding:10px;
+}
+.move-panel.show{display:block}
+.move-panel p{margin:0 0 8px;color:#475569;font-size:.92rem}
+.move-actions{display:flex;flex-wrap:wrap;gap:8px}
+.move-actions .btn{min-height:42px;padding:8px 11px}
+.side{display:grid;gap:16px}
+.side-card{padding:16px}
+.side-card h3{margin:0 0 12px;font-size:1rem}
+.counter{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:9px 12px;
+  font-size:.97rem;
+}
+.counter strong{font-size:1.05rem}
+.progressbar{
+  height:9px;
+  background:#e2e8f0;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:12px;
+}
+.progressbar > div{
+  height:100%;
+  width:0;
+  background:#2563eb;
+  transition:width .2s ease;
+}
+.action-stack{display:grid;gap:9px}
+.result-panel{display:none}
+.result-panel.show{display:block}
+.result-title{
+  font-size:1.1rem;
+  font-weight:900;
+  margin-bottom:10px;
+}
+.arrangement{
+  font-size:1.65rem;
+  font-weight:900;
+  letter-spacing:.04em;
+  color:#1d4ed8;
+  margin:6px 0 12px;
+}
+.shell-status{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+.shell-status div{
+  border-radius:10px;
+  padding:9px 10px;
+  background:#f8fafc;
+  font-size:.93rem;
+}
+.shell-status .ok{background:var(--good-soft);color:#166534}
+.shell-status .no{background:var(--warn-soft);color:#9a3412}
+.pulse{animation:pulse .55s ease}
+@keyframes pulse{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.025)}
+  100%{transform:scale(1)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr}
+  .side{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:580px){
+  .app{padding:10px}
+  .header{align-items:flex-start}
+  .step-pill{font-size:.82rem}
+  .question-card,.workspace-card,.side-card{border-radius:16px}
+  .symbol-tile{width:72px;height:72px}
+  .symbol-tile strong{font-size:1.7rem}
+  .side{grid-template-columns:1fr}
+  .electron{width:44px;height:44px}
+  .nucleus{width:72px;height:72px}
+  .shell-ring::after{font-size:.66rem}
+}
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <header class="header">
+    <div class="brand">
+      <h1>電子圖互動練習</h1>
+      <p>Electron Shell Diagram Practice</p>
+    </div>
+    <div class="step-pill" id="stepPill">Step 1 / 4</div>
+  </header>
+
+  <section class="grid">
+    <div>
+      <article class="card question-card">
+        <div class="element-row">
+          <div class="symbol-tile" aria-label="元素符號"><strong id="elementSymbol">Na</strong></div>
+          <div class="element-meta">
+            <h2 id="elementName">Sodium 鈉</h2>
+            <p>Atomic Number 原子序：<strong id="atomicNumber">11</strong></p>
+          </div>
+        </div>
+
+        <div class="stage" id="stage1">
+          <h3>1. 這個中性原子共有多少粒電子？</h3>
+          <p>How many electrons are in this neutral atom?</p>
+          <form class="answer-line" id="electronForm">
+            <input class="number-input" id="electronInput" type="number" min="1" max="20" inputmode="numeric" autocomplete="off" aria-label="電子數量">
+            <button class="btn primary" type="submit">確認 Confirm</button>
+          </form>
+          <div class="feedback" id="electronFeedback" aria-live="polite"></div>
+        </div>
+
+        <div class="stage" id="stage2" hidden>
+          <h3>2. 這個原子需要多少個電子層？</h3>
+          <p>How many electron shells are needed?</p>
+          <div class="answer-line" id="shellChoices">
+            <button class="btn shell-choice" type="button" data-shell-count="1">1 層</button>
+            <button class="btn shell-choice" type="button" data-shell-count="2">2 層</button>
+            <button class="btn shell-choice" type="button" data-shell-count="3">3 層</button>
+            <button class="btn shell-choice" type="button" data-shell-count="4">4 層</button>
+            <button class="btn primary" type="button" id="buildShellsBtn" disabled>建立電子層</button>
+          </div>
+          <div class="feedback" id="shellFeedback" aria-live="polite"></div>
+        </div>
+      </article>
+
+      <section class="card workspace-card" id="workspaceCard" hidden>
+        <div class="workspace-head">
+          <div>
+            <h3>3. 把電子放到適當的電子層</h3>
+            <small>拖放電子，或先點選電子再使用下方按鈕。</small>
+          </div>
+          <strong id="workspaceInstruction">Place all electrons</strong>
+        </div>
+
+        <div class="atom-wrap">
+          <div class="atom-canvas" id="atomCanvas" aria-label="電子圖工作區">
+            <div class="nucleus" id="nucleus">Na</div>
+          </div>
+        </div>
+
+        <div class="move-panel" id="movePanel" aria-live="polite">
+          <p id="moveText">已選取電子。選擇要放到哪一層：</p>
+          <div class="move-actions" id="moveActions"></div>
+        </div>
+
+        <div class="bank" id="electronBank">
+          <div class="bank-title">
+            <span>Electron Bank 電子區</span>
+            <span id="bankCount">11 粒</span>
+          </div>
+          <div class="bank-items" id="bankItems"></div>
+        </div>
+
+        <div class="feedback" id="placementFeedback" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <section class="card side-card">
+        <h3>Electron Counter 電子計數</h3>
+        <div class="counter">
+          <span>Total 總數</span><strong id="totalCount">11</strong>
+          <span>Placed 已放置</span><strong id="placedCount">0</strong>
+          <span>Remaining 尚餘</span><strong id="remainingCount">11</strong>
+        </div>
+        <div class="progressbar" aria-hidden="true"><div id="progressFill"></div></div>
+      </section>
+
+      <section class="card side-card">
+        <h3>Controls 操作</h3>
+        <div class="action-stack">
+          <button class="btn ghost" type="button" id="hintBtn" disabled>提示 Hint</button>
+          <button class="btn ghost" type="button" id="resetBtn" disabled>重新開始 Reset</button>
+          <button class="btn primary" type="button" id="checkBtn" disabled>檢查答案 Check Answer</button>
+          <button class="btn good" type="button" id="nextBtn" hidden>下一題 Next Element</button>
+        </div>
+        <div class="feedback" id="hintFeedback" aria-live="polite"></div>
+      </section>
+
+      <section class="card side-card result-panel" id="resultPanel">
+        <div class="result-title" id="resultTitle"></div>
+        <div id="resultBody"></div>
+        <div class="shell-status" id="shellStatus"></div>
+      </section>
+    </aside>
+  </section>
+</main>
+
+<script>
+(() => {
+  const elements = [
+    {z:1,symbol:"H",en:"Hydrogen",zh:"氫",arr:[1]},
+    {z:2,symbol:"He",en:"Helium",zh:"氦",arr:[2]},
+    {z:3,symbol:"Li",en:"Lithium",zh:"鋰",arr:[2,1]},
+    {z:4,symbol:"Be",en:"Beryllium",zh:"鈹",arr:[2,2]},
+    {z:5,symbol:"B",en:"Boron",zh:"硼",arr:[2,3]},
+    {z:6,symbol:"C",en:"Carbon",zh:"碳",arr:[2,4]},
+    {z:7,symbol:"N",en:"Nitrogen",zh:"氮",arr:[2,5]},
+    {z:8,symbol:"O",en:"Oxygen",zh:"氧",arr:[2,6]},
+    {z:9,symbol:"F",en:"Fluorine",zh:"氟",arr:[2,7]},
+    {z:10,symbol:"Ne",en:"Neon",zh:"氖",arr:[2,8]},
+    {z:11,symbol:"Na",en:"Sodium",zh:"鈉",arr:[2,8,1]},
+    {z:12,symbol:"Mg",en:"Magnesium",zh:"鎂",arr:[2,8,2]},
+    {z:13,symbol:"Al",en:"Aluminium",zh:"鋁",arr:[2,8,3]},
+    {z:14,symbol:"Si",en:"Silicon",zh:"矽",arr:[2,8,4]},
+    {z:15,symbol:"P",en:"Phosphorus",zh:"磷",arr:[2,8,5]},
+    {z:16,symbol:"S",en:"Sulfur",zh:"硫",arr:[2,8,6]},
+    {z:17,symbol:"Cl",en:"Chlorine",zh:"氯",arr:[2,8,7]},
+    {z:18,symbol:"Ar",en:"Argon",zh:"氬",arr:[2,8,8]},
+    {z:19,symbol:"K",en:"Potassium",zh:"鉀",arr:[2,8,8,1]},
+    {z:20,symbol:"Ca",en:"Calcium",zh:"鈣",arr:[2,8,8,2]}
+  ];
+
+  const shellCaps = [2,8,8,2];
+  let current = null;
+  let lastZ = null;
+  let selectedShellCount = null;
+  let electrons = [];
+  let selectedElectronId = null;
+  let hintLevel = 0;
+  let drag = null;
+
+  const $ = id => document.getElementById(id);
+  const el = {
+    stepPill:$("stepPill"),
+    symbol:$("elementSymbol"),
+    name:$("elementName"),
+    atomic:$("atomicNumber"),
+    stage1:$("stage1"),
+    stage2:$("stage2"),
+    electronForm:$("electronForm"),
+    electronInput:$("electronInput"),
+    electronFeedback:$("electronFeedback"),
+    shellChoices:$("shellChoices"),
+    buildShellsBtn:$("buildShellsBtn"),
+    shellFeedback:$("shellFeedback"),
+    workspaceCard:$("workspaceCard"),
+    atomCanvas:$("atomCanvas"),
+    nucleus:$("nucleus"),
+    electronBank:$("electronBank"),
+    bankItems:$("bankItems"),
+    bankCount:$("bankCount"),
+    placementFeedback:$("placementFeedback"),
+    totalCount:$("totalCount"),
+    placedCount:$("placedCount"),
+    remainingCount:$("remainingCount"),
+    progressFill:$("progressFill"),
+    hintBtn:$("hintBtn"),
+    resetBtn:$("resetBtn"),
+    checkBtn:$("checkBtn"),
+    nextBtn:$("nextBtn"),
+    hintFeedback:$("hintFeedback"),
+    resultPanel:$("resultPanel"),
+    resultTitle:$("resultTitle"),
+    resultBody:$("resultBody"),
+    shellStatus:$("shellStatus"),
+    movePanel:$("movePanel"),
+    moveActions:$("moveActions"),
+    moveText:$("moveText"),
+    workspaceInstruction:$("workspaceInstruction")
+  };
+
+  function setFeedback(node, message="", type="info"){
+    node.className = "feedback" + (message ? " show " + type : "");
+    node.textContent = message;
+  }
+
+  function chooseElement(){
+    let pool = elements.filter(x => x.z !== lastZ);
+    current = pool[Math.floor(Math.random()*pool.length)];
+    lastZ = current.z;
+  }
+
+  function startQuestion(){
+    chooseElement();
+    selectedShellCount = null;
+    electrons = [];
+    selectedElectronId = null;
+    hintLevel = 0;
+
+    el.symbol.textContent = current.symbol;
+    el.name.textContent = `${current.en} ${current.zh}`;
+    el.atomic.textContent = current.z;
+    el.nucleus.textContent = current.symbol;
+    el.totalCount.textContent = current.z;
+    el.placedCount.textContent = "0";
+    el.remainingCount.textContent = current.z;
+    el.progressFill.style.width = "0%";
+    el.electronInput.value = "";
+    el.stage1.hidden = false;
+    el.stage2.hidden = true;
+    el.workspaceCard.hidden = true;
+    el.stepPill.textContent = "Step 1 / 4";
+    el.buildShellsBtn.disabled = true;
+    el.hintBtn.disabled = true;
+    el.resetBtn.disabled = true;
+    el.checkBtn.disabled = true;
+    el.nextBtn.hidden = true;
+    el.resultPanel.classList.remove("show");
+    el.resultBody.innerHTML = "";
+    el.shellStatus.innerHTML = "";
+    el.movePanel.classList.remove("show");
+    setFeedback(el.electronFeedback);
+    setFeedback(el.shellFeedback);
+    setFeedback(el.placementFeedback);
+    setFeedback(el.hintFeedback);
+
+    [...el.shellChoices.querySelectorAll(".shell-choice")].forEach(b => b.classList.remove("selected"));
+    clearCanvas();
+    requestAnimationFrame(() => el.electronInput.focus());
+  }
+
+  function clearCanvas(){
+    el.atomCanvas.querySelectorAll(".shell-ring,.electron").forEach(n => n.remove());
+    el.bankItems.innerHTML = "";
+  }
+
+  el.electronForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const value = Number(el.electronInput.value);
+    if (!Number.isInteger(value) || value < 1 || value > 20){
+      setFeedback(el.electronFeedback,"請輸入 1–20 之間的整數。","warn");
+      return;
+    }
+    if (value === current.z){
+      setFeedback(el.electronFeedback,"✓ 正確！中性原子的電子數目與原子序相同。","good");
+      el.stage2.hidden = false;
+      el.stepPill.textContent = "Step 2 / 4";
+      setTimeout(() => el.stage2.scrollIntoView({behavior:"smooth",block:"nearest"}),150);
+    } else {
+      setFeedback(el.electronFeedback,"再想一想：中性原子的電子數目與原子序有甚麼關係？","warn");
+    }
+  });
+
+  el.shellChoices.addEventListener("click", e => {
+    const btn = e.target.closest(".shell-choice");
+    if (!btn) return;
+    selectedShellCount = Number(btn.dataset.shellCount);
+    [...el.shellChoices.querySelectorAll(".shell-choice")].forEach(b => b.classList.toggle("selected", b === btn));
+    el.buildShellsBtn.disabled = false;
+    setFeedback(el.shellFeedback);
+  });
+
+  el.buildShellsBtn.addEventListener("click", () => {
+    if (selectedShellCount === current.arr.length){
+      setFeedback(el.shellFeedback,"✓ 正確！現在把所有電子放到適當的電子層。","good");
+      beginWorkspace();
+    } else {
+      setFeedback(el.shellFeedback,"電子需要由最內層開始排列。再想一想，這些電子需要多少層才能放完？","warn");
+    }
+  });
+
+  function beginWorkspace(){
+    electrons = Array.from({length:current.z},(_,i)=>({id:i+1,shell:0}));
+    el.workspaceCard.hidden = false;
+    el.stepPill.textContent = "Step 3 / 4";
+    el.hintBtn.disabled = false;
+    el.resetBtn.disabled = false;
+    renderAll();
+    setTimeout(() => el.workspaceCard.scrollIntoView({behavior:"smooth",block:"start"}),150);
+  }
+
+  function shellRadiusPct(shellIndex, totalShells){
+    const presets = {
+      1:[31],
+      2:[24,40],
+      3:[19,31,43],
+      4:[16,26,36,45]
+    };
+    return presets[totalShells][shellIndex-1];
+  }
+
+  function pointOnShell(angleDeg, radiusPct, tangentOffsetPct = 0){
+    const a = angleDeg * Math.PI / 180;
+    const tx = -Math.sin(a);
+    const ty = Math.cos(a);
+
+    return {
+      x: 50 + radiusPct * Math.cos(a) + tangentOffsetPct * tx,
+      y: 50 + radiusPct * Math.sin(a) + tangentOffsetPct * ty
+    };
+  }
+
+  function getElectronPositions(shell, count, radiusPct){
+    if(count <= 0) return [];
+
+    // Shell 1: simple inner-shell convention.
+    if(shell === 1){
+      if(count === 1) return [pointOnShell(-90, radiusPct)];
+      return [
+        pointOnShell(-90, radiusPct),
+        pointOnShell(90, radiusPct)
+      ];
+    }
+
+    // Shell 4 is only used for K and Ca in the V1 scope.
+    if(shell === 4){
+      if(count === 1) return [pointOnShell(-90, radiusPct)];
+      return [
+        pointOnShell(-90, radiusPct),
+        pointOnShell(90, radiusPct)
+      ];
+    }
+
+    // Shells 2 and 3:
+    // Use four fixed anchors: top, right, bottom, left.
+    // Electrons 1–4 occupy the four anchors singly.
+    // Electrons 5–8 pair with those anchors in the same order.
+    const anchorAngles = [-90, 0, 90, 180];
+    const occupancy = [0,0,0,0];
+
+    for(let i=0; i<count; i++){
+      if(i < 4) occupancy[i] += 1;
+      else occupancy[i-4] += 1;
+    }
+
+    // Tangential offset keeps each pair close together without overlap.
+    // Slightly scale spacing for inner/outer shells.
+    const pairOffset = shell === 2 ? 3.8 : 4.2;
+    const positions = [];
+
+    occupancy.forEach((n, anchorIndex)=>{
+      if(n === 1){
+        positions.push(pointOnShell(anchorAngles[anchorIndex], radiusPct));
+      }else if(n === 2){
+        positions.push(pointOnShell(anchorAngles[anchorIndex], radiusPct, -pairOffset));
+        positions.push(pointOnShell(anchorAngles[anchorIndex], radiusPct,  pairOffset));
+      }
+    });
+
+    return positions;
+  }
+
+  function renderRings(){
+    el.atomCanvas.querySelectorAll(".shell-ring").forEach(n=>n.remove());
+    for(let i=1;i<=current.arr.length;i++){
+      const ring = document.createElement("div");
+      ring.className = "shell-ring";
+      ring.dataset.shell = String(i);
+      ring.dataset.label = `Shell ${i}`;
+      const r = shellRadiusPct(i,current.arr.length);
+      ring.style.width = `${r*2}%`;
+      ring.style.height = `${r*2}%`;
+      el.atomCanvas.appendChild(ring);
+    }
+  }
+
+  function renderElectrons(){
+    el.atomCanvas.querySelectorAll(".electron").forEach(n=>n.remove());
+    el.bankItems.innerHTML = "";
+
+    const grouped = Array.from({length:current.arr.length},()=>[]);
+    electrons.forEach(e => {
+      if (e.shell > 0) grouped[e.shell-1].push(e);
+    });
+
+    electrons.filter(e=>e.shell===0).forEach(e=>{
+      el.bankItems.appendChild(makeElectronButton(e,false));
+    });
+
+    if (!electrons.some(e=>e.shell===0)){
+      const empty=document.createElement("span");
+      empty.className="empty-note";
+      empty.textContent="所有電子已放置";
+      el.bankItems.appendChild(empty);
+    }
+
+    grouped.forEach((group, idx)=>{
+      const shell = idx + 1;
+      const r = shellRadiusPct(shell,current.arr.length);
+      const positions = getElectronPositions(shell, group.length, r);
+
+      group.forEach((e,j)=>{
+        const pos = positions[j];
+        const btn = makeElectronButton(e,true);
+        btn.style.left = `${pos.x}%`;
+        btn.style.top = `${pos.y}%`;
+        el.atomCanvas.appendChild(btn);
+      });
+    });
+  }
+
+  function makeElectronButton(e, inCanvas){
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className="electron" + (inCanvas?" in-canvas":"") + (selectedElectronId===e.id?" selected":"");
+    btn.dataset.electronId=String(e.id);
+    btn.setAttribute("aria-label",`電子 ${e.id}${e.shell?`，第 ${e.shell} 層`:"，電子區"}`);
+    btn.textContent="e⁻";
+    btn.addEventListener("pointerdown", electronPointerDown);
+    btn.addEventListener("click", electronClick);
+    return btn;
+  }
+
+  function electronClick(e){
+    if (drag && drag.moved) return;
+    const id=Number(e.currentTarget.dataset.electronId);
+    selectedElectronId = selectedElectronId===id ? null : id;
+    renderElectrons();
+    renderMovePanel();
+  }
+
+  function electronPointerDown(e){
+    if (e.button !== undefined && e.button !== 0) return;
+    const id=Number(e.currentTarget.dataset.electronId);
+    const source=electrons.find(x=>x.id===id);
+    if(!source) return;
+
+    const ghost=e.currentTarget.cloneNode(true);
+    ghost.classList.add("drag-ghost");
+    ghost.style.left=`${e.clientX}px`;
+    ghost.style.top=`${e.clientY}px`;
+    document.body.appendChild(ghost);
+
+    drag={
+      id,
+      pointerId:e.pointerId,
+      ghost,
+      startX:e.clientX,
+      startY:e.clientY,
+      moved:false,
+      sourceShell:source.shell,
+      sourceEl:e.currentTarget
+    };
+    try{e.currentTarget.setPointerCapture(e.pointerId)}catch(_){}
+    document.addEventListener("pointermove", pointerMove,{passive:false});
+    document.addEventListener("pointerup", pointerUp,{passive:false,once:true});
+    document.addEventListener("pointercancel", pointerCancel,{passive:false,once:true});
+  }
+
+  function pointerMove(e){
+    if(!drag || e.pointerId!==drag.pointerId) return;
+    e.preventDefault();
+    const dx=e.clientX-drag.startX, dy=e.clientY-drag.startY;
+    if(Math.hypot(dx,dy)>5) drag.moved=true;
+    drag.ghost.style.left=`${e.clientX}px`;
+    drag.ghost.style.top=`${e.clientY}px`;
+    highlightNearestShell(e.clientX,e.clientY);
+  }
+
+  function pointerUp(e){
+    if(!drag || e.pointerId!==drag.pointerId) return;
+    e.preventDefault();
+    const moved=drag.moved;
+    const id=drag.id;
+    cleanupDrag();
+    clearRingHighlights();
+    if(!moved) return;
+    handleDrop(id,e.clientX,e.clientY);
+  }
+
+  function pointerCancel(){
+    cleanupDrag();
+    clearRingHighlights();
+  }
+
+  function cleanupDrag(){
+    if(!drag) return;
+    drag.ghost.remove();
+    document.removeEventListener("pointermove",pointerMove);
+    drag=null;
+  }
+
+  function clearRingHighlights(){
+    el.atomCanvas.querySelectorAll(".shell-ring").forEach(r=>r.classList.remove("hot"));
+  }
+
+  function nearestShellAt(x,y){
+    const rect=el.atomCanvas.getBoundingClientRect();
+    if(x<rect.left || x>rect.right || y<rect.top || y>rect.bottom) return null;
+    const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+    const dist=Math.hypot(x-cx,y-cy);
+    const radii=[];
+    for(let i=1;i<=current.arr.length;i++) radii.push(rect.width*shellRadiusPct(i,current.arr.length)/100);
+    let best=0, bestDiff=Infinity;
+    radii.forEach((r,i)=>{
+      const d=Math.abs(dist-r);
+      if(d<bestDiff){bestDiff=d;best=i+1;}
+    });
+    const minR=radii[0]*0.55;
+    const maxR=radii[radii.length-1]+Math.max(36,rect.width*.06);
+    if(dist<minR || dist>maxR) return null;
+    return best;
+  }
+
+  function highlightNearestShell(x,y){
+    clearRingHighlights();
+    const shell=nearestShellAt(x,y);
+    if(shell){
+      const ring=el.atomCanvas.querySelector(`.shell-ring[data-shell="${shell}"]`);
+      if(ring) ring.classList.add("hot");
+    }
+  }
+
+  function pointInRect(x,y,rect){
+    return x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom;
+  }
+
+  function handleDrop(id,x,y){
+    const e=electrons.find(v=>v.id===id);
+    if(!e) return;
+
+    const bankRect=el.electronBank.getBoundingClientRect();
+    if(pointInRect(x,y,bankRect)){
+      e.shell=0;
+      selectedElectronId=null;
+      setFeedback(el.placementFeedback,"電子已返回 Electron Bank。","info");
+      afterPlacement();
+      return;
+    }
+
+    const shell=nearestShellAt(x,y);
+    if(shell){
+      moveElectron(id,shell);
+      return;
+    }
+
+    setFeedback(el.placementFeedback,"未放到電子層上，電子已返回原來位置。","warn");
+    renderAll();
+  }
+
+  function moveElectron(id,targetShell){
+    const e=electrons.find(v=>v.id===id);
+    if(!e) return;
+    if(targetShell<0 || targetShell>current.arr.length) return;
+
+    if(targetShell===0){
+      e.shell=0;
+      selectedElectronId=null;
+      setFeedback(el.placementFeedback,"電子已返回 Electron Bank。","info");
+      afterPlacement();
+      return;
+    }
+
+    const currentCount=electrons.filter(v=>v.shell===targetShell && v.id!==id).length;
+    if(currentCount>=shellCaps[targetShell-1]){
+      setFeedback(el.placementFeedback,`第 ${targetShell} 電子層已達到 V1 練習的容量上限（${shellCaps[targetShell-1]} 粒）。`,"bad");
+      renderAll();
+      return;
+    }
+
+    e.shell=targetShell;
+    selectedElectronId=null;
+    setFeedback(el.placementFeedback,`電子已放到第 ${targetShell} 電子層。`,"info");
+
+    for(let s=1;s<targetShell;s++){
+      const count=electrons.filter(v=>v.shell===s).length;
+      if(count<shellCaps[s-1]){
+        setFeedback(el.placementFeedback,`💡 第 ${s} 電子層好像還有空位，可以再想一想填充次序。`,"warn");
+        break;
+      }
+    }
+    afterPlacement();
+  }
+
+  function afterPlacement(){
+    renderAll();
+    el.resultPanel.classList.remove("show");
+    el.nextBtn.hidden=true;
+  }
+
+  function renderAll(){
+    renderRings();
+    renderElectrons();
+    renderMovePanel();
+    updateCounters();
+  }
+
+  function renderMovePanel(){
+    el.moveActions.innerHTML="";
+    if(selectedElectronId==null || el.workspaceCard.hidden){
+      el.movePanel.classList.remove("show");
+      return;
+    }
+    el.movePanel.classList.add("show");
+    for(let s=1;s<=current.arr.length;s++){
+      const b=document.createElement("button");
+      b.type="button";
+      b.className="btn ghost";
+      b.textContent=`第 ${s} 層`;
+      b.addEventListener("click",()=>moveElectron(selectedElectronId,s));
+      el.moveActions.appendChild(b);
+    }
+    const back=document.createElement("button");
+    back.type="button";
+    back.className="btn ghost";
+    back.textContent="返回電子區";
+    back.addEventListener("click",()=>moveElectron(selectedElectronId,0));
+    el.moveActions.appendChild(back);
+  }
+
+  function updateCounters(){
+    const placed=electrons.filter(e=>e.shell>0).length;
+    const remaining=current.z-placed;
+    el.placedCount.textContent=placed;
+    el.remainingCount.textContent=remaining;
+    el.bankCount.textContent=`${remaining} 粒`;
+    el.progressFill.style.width=`${current.z ? (placed/current.z)*100 : 0}%`;
+    el.checkBtn.disabled=placed!==current.z;
+    el.workspaceInstruction.textContent=placed===current.z ? "Ready to check" : `尚餘 ${remaining} 粒`;
+    if(placed===current.z) el.stepPill.textContent="Step 4 / 4";
+  }
+
+  el.hintBtn.addEventListener("click",()=>{
+    hintLevel=Math.min(hintLevel+1,2);
+    if(hintLevel===1){
+      setFeedback(el.hintFeedback,"提示：電子應先填入較接近原子核的電子層。","info");
+    }else{
+      setFeedback(el.hintFeedback,"提示：第一層最多 2 粒；第二層最多 8 粒；首 20 個元素的第三層在本練習最多使用 8 粒。","info");
+    }
+  });
+
+  el.resetBtn.addEventListener("click",()=>{
+    if(!electrons.length) return;
+    electrons.forEach(e=>e.shell=0);
+    selectedElectronId=null;
+    hintLevel=0;
+    setFeedback(el.placementFeedback,"已清除電子位置，可以重新排列。","info");
+    setFeedback(el.hintFeedback);
+    el.resultPanel.classList.remove("show");
+    el.nextBtn.hidden=true;
+    renderAll();
+  });
+
+  el.checkBtn.addEventListener("click",()=>{
+    if(el.checkBtn.disabled) return;
+    const counts=Array.from({length:current.arr.length},(_,i)=>electrons.filter(e=>e.shell===i+1).length);
+    const ok=counts.every((v,i)=>v===current.arr[i]);
+
+    el.resultPanel.classList.add("show");
+    el.shellStatus.innerHTML="";
+
+    counts.forEach((v,i)=>{
+      const row=document.createElement("div");
+      const good=v===current.arr[i];
+      row.className=good?"ok":"no";
+      row.textContent=`Shell ${i+1} 第 ${i+1} 層：${good?"✓ 正確":"需要再檢查"}`;
+      el.shellStatus.appendChild(row);
+    });
+
+    if(ok){
+      el.resultTitle.textContent="✓ Correct! 正確！";
+      el.resultBody.innerHTML=
+        `<div>Electronic Arrangement 電子排列</div>
+         <div class="arrangement">${current.arr.join(", ")}</div>
+         <div>Outer-shell Electrons 最外層電子：<strong>${current.arr[current.arr.length-1]}</strong></div>`;
+      el.nextBtn.hidden=false;
+      el.atomCanvas.classList.remove("pulse");
+      void el.atomCanvas.offsetWidth;
+      el.atomCanvas.classList.add("pulse");
+      setFeedback(el.placementFeedback,"做得好！電子分佈完全正確。","good");
+    }else{
+      el.resultTitle.textContent="還未完全正確";
+      el.resultBody.innerHTML="<div>看看哪些電子層需要再檢查，然後直接拖動電子修改。</div>";
+      el.nextBtn.hidden=true;
+      setFeedback(el.placementFeedback,"還未完全正確。系統不會直接顯示答案，請按提示重新檢查。","warn");
+    }
+  });
+
+  el.nextBtn.addEventListener("click", startQuestion);
+  window.addEventListener("resize",()=>{ if(!el.workspaceCard.hidden) renderAll(); });
+
+  startQuestion();
+})();
+</script>
+</body>
+</html>
